@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+singleGraph
+{
+
+    interpolationScheme (cellPointFace);
+    fields          (sigma);
+    surfaceFormat    (vtk);
+
+    // #includeEtc "caseDicts/postProcessing/graphs/sampleDict.cfg"
+    //#includeEtc "caseDicts/postProcessing/graphs/sampleDict.cfg"
+    // interpolationScheme cellPatchConstrained;
+
+
+    // surfaces 
+    // (
+    //     left 
+    //     {
+    //         type         patch;
+    //         // patchName 	 left;
+    //         // interpolate 	false;
+    //         // triangulate 	true; 
+    //     }
+    // );
+
+    // setFormat   raw;
+
+    setConfig
+    {
+        axis    y;    // x, y, z, xyz
+        //nPoints 1000;
+    }
+
+
+// Must be last entry
+    #includeEtc "caseDicts/postProcessing/graphs/graph.cfg"
+}
+
+// ************************************************************************* //

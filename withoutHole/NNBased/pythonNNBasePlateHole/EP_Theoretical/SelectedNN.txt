@@ -1,0 +1,1 @@
+the NN used for the EP nn calculations is the one from Results/50 in the other folder

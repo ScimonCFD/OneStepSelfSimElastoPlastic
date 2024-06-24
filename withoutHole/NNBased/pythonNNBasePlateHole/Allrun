@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Usage
+# Run in serial:
+# $> ./Allrun parallel
+# Run in parallel:
+# $> ./Allrun parallel
+
+# Source tutorial run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+# Compatibility changes for foam extend
+if [[ $WM_PROJECT = "foam" ]]
+then
+    sed -i 's\symmetry;\symmetryPlane;\g' "0/D"
+    sed -i 's\symmetry\symmetryPlane\g' "system/blockMeshDict"
+
+    # Copy blockMeshDict to constant/polyMesh
+    mkdir constant/polyMesh
+    cp system/blockMeshDict constant/polyMesh/
+fi
+
+# Create mesh
+runApplication blockMesh
+
+if [[ "$1" == "parallel" ]]; then
+    # Decompose the case
+    runApplication decomposePar
+
+    # Run solver
+    mpirun -np 4 pythonSolids4Foam -parallel > log.pythonSolids4Foam
+
+    # Reconstruct the case
+    runApplication reconstructPar
+else
+    # Run solver in serial
+    runApplication recurrentPySolids4Foam
+fi

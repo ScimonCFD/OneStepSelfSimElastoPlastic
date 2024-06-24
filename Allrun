@@ -1,0 +1,82 @@
+#!/bin/bash
+cd ${0%/*} || exit 1    # run from this directory
+
+# Stop at first error
+set -e
+
+# Check if OpenFOAM/FOAM has been sourced
+if [[ -z "${WM_PROJECT}" ]]
+then
+    echo "Please source the OpenFOAM/FOAM bashrc first!"
+    exit 1
+fi
+
+# Check required environment variables are set
+if [[ -z "${SOLIDS4FOAM_INST_DIR}" ]]
+then
+    echo "Please set the SOLIDS4FOAM_INST_DIR environment variable!"
+    exit 1
+fi
+if [[ -z "${PYBIND11_INC_DIR}" ]]
+then
+    echo "Please set the PYBIND11_INC_DIR environment variable!"
+    exit 1
+fi
+if [[ -z "${PYBIND11_LIB_DIR}" ]]
+then
+    echo "Please set the PYBIND11_LIB_DIR environment variable!"
+    exit 1
+fi
+
+# # Run the simulations
+cd withoutHole/Theoretical/solids4foamPlateHole && ./Allrun
+cd ../../NNBased/pythonNNBasePlateHole/fullyElastic && ./Allrun
+cd ../../.. && python selfsim.py
+
+# Copy the trained NN to With_EP_NN folder
+cp NNBased/pythonNNBasePlateHole/Results/plots/50/*.h5 NNBased/pythonNNBasePlateHole/With_EP_NN/
+
+
+# Copy the scalers to With_EP_NN folder
+cp neuralNetworks/*.joblib NNBased/pythonNNBasePlateHole/With_EP_NN/
+
+# Copy the linear elastic NN to With_Elastic_NN folder
+cp neuralNetworks/*.h5 NNBased/pythonNNBasePlateHole/With_Elastic_NN/
+# Copy the scalers to With_Elastic_NN folder
+cp neuralNetworks/*.joblib NNBased/pythonNNBasePlateHole/With_Elastic_NN/
+
+# Run the simulations needed to plot the results
+cd NNBased/pythonNNBasePlateHole/EP_Theoretical && ./Allrun &
+cd NNBased/pythonNNBasePlateHole/fullyElastic && ./Allrun &
+cd NNBased/pythonNNBasePlateHole/With_Elastic_NN && ./Allrun &
+cd NNBased/pythonNNBasePlateHole/With_EP_NN && ./Allrun &
+wait
+
+echo "Plotting results for the plate case"
+echo " \n \n"
+echo "    "
+cd NNBased/pythonNNBasePlateHole && python post_processor.py
+
+cd ../..
+
+
+# Copy the trained NN 
+cp NNBased/pythonNNBasePlateHole/Results/plots/50/*.h5   ../withHole/
+cp NNBased/pythonNNBasePlateHole/Results/plots/50/*.h5 ../withHole/With_EP_NN/
+cp neuralNetworks/*.joblib   ../withHole/ 
+cp neuralNetworks/*.joblib   ../withHole/With_EP_NN/
+cp neuralNetworks/*.joblib   ../withHole/With_Elastic_NN/
+cp neuralNetworks/*.h5   ../withHole/With_Elastic_NN/
+
+cd ../withHole/
+
+# Run the simulations needed to plot the results
+cd EP_Theoretical && ./Allrun &
+cd fullyElastic && ./Allrun &
+cd With_Elastic_NN && ./Allrun &
+cd With_EP_NN && ./Allrun &
+wait
+
+python post_processor.py
+
+echo "The end."
